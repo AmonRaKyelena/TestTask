@@ -1,14 +1,12 @@
-#include <iostream>
-#include <boost/asio.hpp>
-#include "json.hpp"
+#include "include.hpp"
 
 using boost::asio::ip::tcp;
 
-const short port = 12345;
+const short clietn_port = 12345;
 
 namespace Requests {
-    const std::string Registration = "Registration";
-    const std::string Hello = "Hello";
+    const std::string RegistrationClient = "Registration";
+    const std::string HelloClient= "Hello";
     const std::string SubmitOrder = "SubmitOrder";
     const std::string GetBalance = "GetBalance";
 }
@@ -39,7 +37,7 @@ std::string ProcessRegistration(tcp::socket& aSocket)
     std::cout << "Hello! Enter your name: ";
     std::cin >> name;
 
-    SendMessage(aSocket, "0", Requests::Registration, name);
+    SendMessage(aSocket, "0", Requests::RegistrationClient, name);
     return ReadMessage(aSocket);
 }
 
@@ -52,7 +50,7 @@ bool IsValidDouble(const std::string& str) {
     double d;
     return iss >> d && iss.eof();
 }
-
+//переделать
 void SubmitOrder(tcp::socket& s, const std::string& user_id)
 {
     std::string order_type;
@@ -75,21 +73,21 @@ void SubmitOrder(tcp::socket& s, const std::string& user_id)
         }
         std::cout << "Invalid order type. Please enter 'BUY' or 'SELL'.\n";
     }
-
+    //вынести в отдельную функцию
     while (true) {
         std::cout << "Enter volume: ";
         std::cin >> volume_str;
-
+        //вынести в отдельную функцию
         if (std::cin.eof()) {
             std::cout << "Input interrupted.\n";
             std::exit(0);
         }
-
+        //проверить stoi
         if (IsValidInteger(volume_str)) {
             volume = std::stoi(volume_str);
             break;
         }
-        std::cout << "Invalid volume. Please enter a valid integer.\n";
+        std::cout << "Invalid volume. Please enter a valid number.\n";
     }
 
     while (true) {
@@ -130,13 +128,12 @@ int main()
         boost::asio::io_service io_service;
 
         tcp::resolver resolver(io_service);
-        tcp::resolver::query query(tcp::v4(), "127.0.0.1", std::to_string(port));
+        tcp::resolver::query query(tcp::v4(), "127.0.0.1", std::to_string(clietn_port));
         tcp::resolver::iterator iterator = resolver.resolve(query);
 
         tcp::socket s(io_service);
         s.connect(*iterator);
 
-        // Регистрируем пользователя - отправляем на сервер имя, сервер возвращает ID.
         std::string my_id = ProcessRegistration(s);
         std::cout << "Registered with ID: " << my_id << std::endl;
 
@@ -146,16 +143,16 @@ int main()
                          "1) Hello Request\n"
                          "2) Submit Order\n"
                          "3) Get Balance\n"
-                         "4) Exit\n"
+                         "4) Exit"
                          << std::endl;
 
-            short menu_option_num;
+            short menu_option_num;//обработать ввод только для цифр
             std::cin >> menu_option_num;
             switch (menu_option_num)
             {
                 case 1:
                 {
-                    SendMessage(s, my_id, Requests::Hello, "");
+                    SendMessage(s, my_id, Requests::HelloClient, "");
                     std::cout << ReadMessage(s) << std::endl;
                     break;
                 }

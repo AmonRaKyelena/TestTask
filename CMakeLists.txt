@@ -6,9 +6,30 @@ FIND_PACKAGE(Threads REQUIRED)
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR})
 
 SET(CMAKE_CXX_STANDARD 17)
+SET(SERVER_SOURCES
+    Server.cpp
+    Core.cpp
+    Session.cpp
+	ServerMain.cpp
+    Common.hpp
+    json.hpp
+    Core.hpp
+    Server.hpp
+    Session.hpp
+    Order.hpp
+)
+SET(CLIENT_SOURCES
+	Client.cpp
+	Common.hpp
+	json.hpp
+	Core.hpp
+	Server.hpp
+	Session.hpp
+	Order.hpp
+)
 
-ADD_EXECUTABLE(Server Server.cpp Common.hpp json.hpp)
+ADD_EXECUTABLE(Server ${SERVER_SOURCES})
 TARGET_LINK_LIBRARIES(Server PRIVATE Threads::Threads ${Boost_LIBRARIES})
 
-ADD_EXECUTABLE(Client Client.cpp Common.hpp json.hpp)
+ADD_EXECUTABLE(Client ${CLIENT_SOURCES})
 TARGET_LINK_LIBRARIES(Client PRIVATE Threads::Threads ${Boost_LIBRARIES})
