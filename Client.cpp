@@ -3,7 +3,7 @@
 using boost::asio::ip::tcp;
 
 const short clietn_port = 12345;
-
+//посмотреть в Common.hpp
 namespace Requests {
     const std::string RegistrationClient = "Registration";
     const std::string HelloClient= "Hello";
@@ -45,11 +45,6 @@ bool IsValidInteger(const std::string& str) {
     return !str.empty() && std::all_of(str.begin(), str.end(), ::isdigit);
 }
 
-bool IsValidDouble(const std::string& str) {
-    std::istringstream iss(str);
-    double d;
-    return iss >> d && iss.eof();
-}
 //переделать
 void SubmitOrder(tcp::socket& s, const std::string& user_id)
 {
@@ -99,8 +94,8 @@ void SubmitOrder(tcp::socket& s, const std::string& user_id)
             std::exit(0);
         }
         
-        if (IsValidDouble(price_str)) {
-            price = std::stod(price_str);
+        if (IsValidInteger(price_str)) {
+            price = std::stoi(price_str);
             break;
         }
         std::cout << "Invalid price. Please enter a valid number.\n";

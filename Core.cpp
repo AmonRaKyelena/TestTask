@@ -16,9 +16,9 @@ std::string Core::GetUserName(const std::string& userId) {
 		return userIt->second;
 	}
 }
-//переделать
-std::string Core::SubmitOrder(const std::string& userId, const std::string& type, int volume, double price) {
-	if (userId.empty() || type.empty() || volume <= 0 || price <= 0.0) {
+
+std::string Core::SubmitOrder(const std::string& userId, const std::string& type, int volume, int price) {
+	if (userId.empty() || type.empty() || volume <= 0 || price <= 0) {
 		return "Error! Invalid input parameters.\n";
 	}
 
@@ -34,6 +34,7 @@ std::string Core::SubmitOrder(const std::string& userId, const std::string& type
 	}
 
 	OrderType orderType;
+	std::cout << "type" << type << std::endl;
 	if (type == "BUY") {
 		orderType = OrderType::BUY;
 	} else if (type == "SELL") {
@@ -47,8 +48,11 @@ std::string Core::SubmitOrder(const std::string& userId, const std::string& type
 
 	std::string result = MatchOrder(order);
 
-	if (order.volume > 0) {
-		mActiveOrders.push_back(order);
+	if (order.volume > 0 && order.type == OrderType::BUY) {
+		mActiveOrdersBuy.insert({order.price, order});
+	}
+	else if (order.volume > 0 && order.type == OrderType::SELL) {
+		mActiveOrdersSell.insert({order.price, order});
 	}
 
 	return result;
@@ -71,29 +75,70 @@ std::string Core::GetBalance(const std::string& userId) {
 	}
 }
 
-void Core::ClearOrders() {
-	mActiveOrders.clear();
-}
-
-//переделать
 std::string Core::MatchOrder(Order& order) {
 	std::string result;
-	auto it = mActiveOrders.begin();
-	while (it != mActiveOrders.end()) {
-		if()
+
+	if(order.type == OrderType::BUY)
+	{
+		for(auto it = mActiveOrdersSell.begin(); it != mActiveOrdersSell.end();)
+		{
+			if(order.price >= it->first)
+			{
+				result += ExecuteTrade(order, it);
+				if(it->second.volume == 0)
+					it = mActiveOrdersSell.erase(it);
+				else
+					++it;
+				if (order.volume == 0) break;
+			} 
+			else 
+			{
+                ++it;
+            }
+		}
 	}
+	else if(order.type == OrderType::SELL)
+	{
+		for(auto it = mActiveOrdersBuy.rbegin(); it != mActiveOrdersBuy.rend(); it++)
+		{
+			if(order.price <= it->first)
+			{
+				result += ExecuteTrade(order, it.base());
+				if (it->second.volume == 0) {
+					auto base = it.base();
+					++it;
+					mActiveOrdersBuy.erase(--base);
+				} 
+				else 
+					++it;
+				if (order.volume == 0) break;
+			} 
+			else 
+				++it;
+		}
+	}
+
 	return result.empty() ? "No matching order found\n" : result;
 }
 
-//передалть static_cast
-void Core::UpdateBalances(int buyerId, int sellerId, int volume, double price, OrderType orderType) {
-	int rubAmount = static_cast<int>(volume * price);
+std::string Core::ExecuteTrade(Order& order, std::multimap<int, Order>::iterator it)
+{
+	int tradeVolume = std::min(order.volume, it->second.volume);
+	UpdateBalances(order.client_id, it->second.client_id, tradeVolume, it->first, order.type);
+	order.volume -= tradeVolume;
+	it->second.volume -= tradeVolume;
+	return "Trade executed: " + std::to_string(tradeVolume) + " USD at " + std::to_string(it->first) + " RUB" + "\n";
+}
+
+
+void Core::UpdateBalances(int buyerId, int sellerId, int volume, int price, OrderType orderType) {
+	int rubAmount = volume * price;
 	if (orderType == OrderType::BUY) {
 		mBalances[buyerId].first += volume;  
 		mBalances[buyerId].second -= rubAmount;  
 		mBalances[sellerId].first -= volume;  
-		mBalances[sellerId].second += rubAmount;  
-	} else {
+		mBalances[sellerId].second += rubAmount;
+	} else if (orderType == OrderType::SELL) {
 		mBalances[buyerId].first -= volume;  
 		mBalances[buyerId].second += rubAmount;  
 		mBalances[sellerId].first += volume;  
@@ -105,29 +150,3 @@ Core& GetCore() {
     static Core core;
     return core;
 }
-
-// if ((order.type == OrderType::BUY && it->type == OrderType::SELL && order.price >= it->price) ||
-		// 	(order.type == OrderType::SELL && it->type == OrderType::BUY && order.price <= it->price)) {
-
-		// 	int tradeVolume = std::min(order.volume, it->volume);
-		// 	double tradePrice = (order.id < it->id) ? order.price : it->price;
-
-		// 	UpdateBalances(order.client_id, it->client_id, tradeVolume, tradePrice, order.type);
-
-		// 	order.volume -= tradeVolume;
-		// 	it->volume -= tradeVolume;
-
-		// 	result += "Trade executed: " + std::to_string(tradeVolume) + " USD at " + std::to_string(tradePrice) + "\n";
-
-		// 	if (it->volume == 0) {
-		// 		it = mActiveOrders.erase(it);
-		// 	} else {
-		// 		++it;
-		// 	}
-
-		// 	if (order.volume == 0) {
-		// 		break;
-		// 	}
-		// } else {
-		// 	++it;
-		// }
