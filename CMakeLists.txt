@@ -4,38 +4,43 @@ PROJECT(ClienServerEcn)
 FIND_PACKAGE(Boost 1.40 COMPONENTS system unit_test_framework REQUIRED)
 FIND_PACKAGE(Threads REQUIRED)
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR})
+include_directories(${PROJECT_SOURCE_DIR}/Includes)
+include_directories(${PROJECT_SOURCE_DIR}src/Client)
+include_directories(${PROJECT_SOURCE_DIR}src/Server)
+include_directories(${PROJECT_SOURCE_DIR}src/Tests)
 
 SET(CMAKE_CXX_STANDARD 17)
 SET(SERVER_SOURCES
-    Server.cpp
-    Core.cpp
-    Session.cpp
-	ServerMain.cpp
-    Common.hpp
-    json.hpp
-    Core.hpp
-    Server.hpp
-    Session.hpp
-    Order.hpp
+	src/Server/Server.cpp
+    src/Server/Core.cpp
+    src/Server/Session.cpp
+	src/Server/ServerMain.cpp
+    Includes/Common.hpp
+    Includes/json.hpp
+    Includes/Core.hpp
+    Includes/Server.hpp
+    Includes/Session.hpp
+    Includes/Order.hpp
+	Includes/Common.hpp
 )
 SET(CLIENT_SOURCES
-	Client.cpp
-	Common.hpp
-	json.hpp
-	Core.hpp
-	Server.hpp
-	Session.hpp
-	Order.hpp
+	src/Client/Client.cpp
+	Includes/Common.hpp
+	Includes/json.hpp
+	Includes/Core.hpp
+	Includes/Server.hpp
+	Includes/Session.hpp
+	Includes/Order.hpp
 )
 SET(TESTS_SOURCES
-	UnitTests.cpp
-	Core.cpp
-	Common.hpp
-	json.hpp
-	Core.hpp
-	Server.hpp
-	Session.hpp
-	Order.hpp
+	src/Tests/UnitTests.cpp
+	src/Server/Core.cpp
+	Includes/Common.hpp
+	Includes/json.hpp
+	Includes/Core.hpp
+	Includes/Server.hpp
+	Includes/Session.hpp
+	Includes/Order.hpp
 )
 
 ADD_EXECUTABLE(Server ${SERVER_SOURCES})
