@@ -6,7 +6,8 @@ enum class OrderType;
 
 class Order;
 
-class Core {
+class Core 
+{
 private:
     std::map<size_t, std::string> mUsers;
     std::map<int, std::pair<int, int>> mBalances; 
@@ -17,7 +18,8 @@ private:
 
 	std::string ExecuteTrade(Order& order, std::multimap<int, Order>::iterator it);
 	std::string MatchOrder(Order& order);
-    
+
+	void PrintOrders();
 	void UpdateBalances(int buyerId, int sellerId, int volume, int price, OrderType orderType);
 	
 public:

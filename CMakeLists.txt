@@ -1,7 +1,7 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.21)
 PROJECT(ClienServerEcn)
 
-FIND_PACKAGE(Boost 1.40 COMPONENTS system REQUIRED)
+FIND_PACKAGE(Boost 1.40 COMPONENTS system unit_test_framework REQUIRED)
 FIND_PACKAGE(Threads REQUIRED)
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR})
 
@@ -27,9 +27,22 @@ SET(CLIENT_SOURCES
 	Session.hpp
 	Order.hpp
 )
+SET(TESTS_SOURCES
+	UnitTests.cpp
+	Core.cpp
+	Common.hpp
+	json.hpp
+	Core.hpp
+	Server.hpp
+	Session.hpp
+	Order.hpp
+)
 
 ADD_EXECUTABLE(Server ${SERVER_SOURCES})
 TARGET_LINK_LIBRARIES(Server PRIVATE Threads::Threads ${Boost_LIBRARIES})
 
 ADD_EXECUTABLE(Client ${CLIENT_SOURCES})
 TARGET_LINK_LIBRARIES(Client PRIVATE Threads::Threads ${Boost_LIBRARIES})
+
+ADD_EXECUTABLE(Tests ${TESTS_SOURCES})
+TARGET_LINK_LIBRARIES(Tests PRIVATE Threads::Threads ${Boost_LIBRARIES})

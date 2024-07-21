@@ -2,9 +2,10 @@
 
 using boost::asio::ip::tcp;
 
-const short clietn_port = 12345;
+const short clientPort = 12345;
 //посмотреть в Common.hpp
-namespace Requests {
+namespace Requests 
+{
     const std::string RegistrationClient = "Registration";
     const std::string HelloClient= "Hello";
     const std::string SubmitOrder = "SubmitOrder";
@@ -31,6 +32,16 @@ std::string ReadMessage(tcp::socket& aSocket)
     return line;
 }
 
+void checkInputEOFAndExit() 
+{
+    //переделать на try catch
+    if (std::cin.eof()) 
+    {
+        std::cout << "Input interrupted.\n";
+        std::exit(0);
+    }
+}
+
 std::string ProcessRegistration(tcp::socket& aSocket)
 {
     std::string name;
@@ -41,72 +52,57 @@ std::string ProcessRegistration(tcp::socket& aSocket)
     return ReadMessage(aSocket);
 }
 
-bool IsValidInteger(const std::string& str) {
+bool IsValidInteger(const std::string& str) 
+{
     return !str.empty() && std::all_of(str.begin(), str.end(), ::isdigit);
 }
 
-//переделать
-void SubmitOrder(tcp::socket& s, const std::string& user_id)
+int getValidatedInput(std::string value)
 {
-    std::string order_type;
-    std::string volume_str;
-    std::string price_str;
+    std::string strValumeOrPrice;
+    while (true) 
+    {
+        std::cout << "Enter " << value << ": ";
+        std::cin >> strValumeOrPrice;
+
+        checkInputEOFAndExit();
+        
+        if (IsValidInteger(strValumeOrPrice)) 
+            return std::stoi(strValumeOrPrice);
+
+        std::cout << "Invalid " << value << ". Please enter a valid number.\n";
+    }
+    return 0;
+}
+
+void SubmitOrder(tcp::socket& s, const std::string& userId)
+{
+    std::string orderType;
     int volume;
-    double price;
+    int price;
 
-    while (true) {
+    while (true) 
+    {
         std::cout << "Enter order type (BUY/SELL): ";
-        std::cin >> order_type;
+        std::cin >> orderType;
 
-        if (std::cin.eof()) {
-            std::cout << "Input interrupted.\n";
-            std::exit(0);
-        }
+        checkInputEOFAndExit();
 
-        if (order_type == "BUY" || order_type == "SELL") {
+        if (orderType == "BUY" || orderType == "SELL") 
             break;
-        }
+
         std::cout << "Invalid order type. Please enter 'BUY' or 'SELL'.\n";
     }
-    //вынести в отдельную функцию
-    while (true) {
-        std::cout << "Enter volume: ";
-        std::cin >> volume_str;
-        //вынести в отдельную функцию
-        if (std::cin.eof()) {
-            std::cout << "Input interrupted.\n";
-            std::exit(0);
-        }
-        //проверить stoi
-        if (IsValidInteger(volume_str)) {
-            volume = std::stoi(volume_str);
-            break;
-        }
-        std::cout << "Invalid volume. Please enter a valid number.\n";
-    }
 
-    while (true) {
-        std::cout << "Enter price: ";
-        std::cin >> price_str;
-
-        if (std::cin.eof()) {
-            std::cout << "Input interrupted.\n";
-            std::exit(0);
-        }
-        
-        if (IsValidInteger(price_str)) {
-            price = std::stoi(price_str);
-            break;
-        }
-        std::cout << "Invalid price. Please enter a valid number.\n";
-    }
-
+    volume = getValidatedInput("volume");
+    price = getValidatedInput("price");
+    
     nlohmann::json order;
-    order["OrderType"] = order_type;
+    order["OrderType"] = orderType;
     order["Volume"] = volume;
     order["Price"] = price;
 
-    SendMessage(s, user_id, Requests::SubmitOrder, order);
+    SendMessage(s, userId, Requests::SubmitOrder, order);
     std::cout << ReadMessage(s);
 }
 
@@ -116,6 +112,62 @@ void GetBalance(tcp::socket& s, const std::string& user_id)
     std::cout << ReadMessage(s);
 }
 
+int displayAndHandleMenu(const std::string& myId, tcp::socket& s)
+{
+    while (true)
+    {
+        std::cout << "Menu:\n"
+                    "1) Hello Request\n"
+                    "2) Submit Order\n"
+                    "3) Get Balance\n"
+                    "4) Exit"
+                    << std::endl;
+
+        std::string menuOptionNumSt;
+        std::cin >> menuOptionNumSt;
+
+        checkInputEOFAndExit();
+
+        if (!IsValidInteger(menuOptionNumSt))
+        {
+            std::cout << "Invalid menu option. Please enter a valid number.\n" << std::endl;
+            continue;
+        }
+            
+
+        short menuOptionNum = std::stoi(menuOptionNumSt);
+
+        switch (menuOptionNum)
+        {
+            case 1:
+            {
+                SendMessage(s, myId, Requests::HelloClient, "");
+                std::cout << ReadMessage(s) << std::endl;
+                break;
+            }
+            case 2:
+            {
+                SubmitOrder(s, myId);
+                break;
+            }
+            case 3:
+            {
+                GetBalance(s, myId);
+                break;
+            }
+            case 4:
+            {
+                return 0;
+            }
+            default:
+            {
+                std::cout << "Unknown menu option\n" << std::endl;
+            }
+        }
+    }
+    return 0;
+}
+
 int main()
 {
     try
@@ -123,54 +175,16 @@ int main()
         boost::asio::io_service io_service;
 
         tcp::resolver resolver(io_service);
-        tcp::resolver::query query(tcp::v4(), "127.0.0.1", std::to_string(clietn_port));
+        tcp::resolver::query query(tcp::v4(), "127.0.0.1", std::to_string(clientPort));
         tcp::resolver::iterator iterator = resolver.resolve(query);
 
         tcp::socket s(io_service);
         s.connect(*iterator);
 
-        std::string my_id = ProcessRegistration(s);
-        std::cout << "Registered with ID: " << my_id << std::endl;
-
-        while (true)
-        {
-            std::cout << "Menu:\n"
-                         "1) Hello Request\n"
-                         "2) Submit Order\n"
-                         "3) Get Balance\n"
-                         "4) Exit"
-                         << std::endl;
-
-            short menu_option_num;//обработать ввод только для цифр
-            std::cin >> menu_option_num;
-            switch (menu_option_num)
-            {
-                case 1:
-                {
-                    SendMessage(s, my_id, Requests::HelloClient, "");
-                    std::cout << ReadMessage(s) << std::endl;
-                    break;
-                }
-                case 2:
-                {
-                    SubmitOrder(s, my_id);
-                    break;
-                }
-                case 3:
-                {
-                    GetBalance(s, my_id);
-                    break;
-                }
-                case 4:
-                {
-                    return 0;
-                }
-                default:
-                {
-                    std::cout << "Unknown menu option\n" << std::endl;
-                }
-            }
-        }
+        std::string myId = ProcessRegistration(s);
+        std::cout << "Registered with ID: " << myId << std::endl;
+        if(displayAndHandleMenu(myId, s) == 0)
+            return 0;
     }
     catch (std::exception& e)
     {

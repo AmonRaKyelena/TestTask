@@ -18,11 +18,7 @@
 
 ## Сборка и запуск
 
-1. Клонируйте репозиторий:
-    git clone <repository_url>
-    cd <repository_name>
-
-2. Соберите проект с использованием CMake:
+1. Соберите проект с использованием CMake:
     mkdir build
     cd build
     cmake ..
@@ -32,7 +28,7 @@
     ./Server
 
 4. Запустите клиент:
-    ./exchange_client
+    ./Сlient
 
 # Тестовое задание для C++ разработчиков
 
